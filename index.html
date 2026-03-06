@@ -276,7 +276,6 @@
     <!-- Dock -->
     <div id="dock-wrapper">
         <div class="dock-app" title="Finder" onclick="launchApp('finder')">📂</div>
-        <div class="dock-app" title="Safari" onclick="launchApp('safari')">🧭</div>
         <div class="dock-app" title="Terminal" onclick="launchApp('terminal')">💻</div>
         <div class="dock-app" title="Code" onclick="launchApp('editor')">📝</div>
         <div class="dock-app" title="Activity Monitor" onclick="launchApp('monitor')">📊</div>
@@ -394,7 +393,7 @@
             if (id === 'editor') return `<div class="code-editor"><div class="gutter" id="line-numbers">1</div><textarea id="code-input" spellcheck="false">/* Hoang's Tahoe */\n\nconsole.log("MACOS Tahoe Replica - Flavortown Project");</textarea></div>`;
             if (id === 'finder') return `<div class="flex h-full bg-white text-black"><div class="w-40 border-r p-4 text-[13px] bg-gray-50 flex flex-col gap-2"><div class="font-bold text-gray-400 text-[10px] uppercase">Favorites</div><div class="bg-gray-200/60 p-1.5 rounded-md">🏠 Home</div><div class="p-1.5">📄 Documents</div></div><div class="flex-1 p-6 grid grid-cols-4 content-start gap-8"><div class="flex flex-col items-center gap-1">📂 Projects</div><div class="flex flex-col items-center gap-1">📄 index.js</div></div></div>`;
             if (id === 'settings') return `<div class="flex h-full bg-white text-black"><div class="w-48 bg-gray-100/50 border-r p-3"><div class="bg-blue-500 text-white p-2 rounded-lg text-sm mb-1">General</div><div class="p-2 text-sm">Appearance</div></div><div class="flex-1 p-10"><h1 class="text-2xl font-bold mb-4">Mac Studio</h1><p class="text-sm opacity-60">M5 Ultra, 2027</p><div class="mt-8 bg-gray-50 p-4 rounded-xl border">Memory: 128GB Unified Memory<br>Processor: Apple M5 Ultra<br>Serial Number: ABCDE12367<br> MacOS: Tahoe${CONFIG.version}</div></div></div>`;
-            return `<div class="p-10">Safari</div>`;
+            return `<div class="p-10">Not Found</div>`;
         }
 
         function setupMonitorLogic(id) {

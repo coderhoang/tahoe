@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MacOS Tahoe Replica</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500&family=Inter:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --accent: #007AFF;
+            --glass: rgba(255, 255, 255, 0.72);
+            --glass-dark: rgba(28, 28, 30, 0.82);
+            --blur: blur(40px);
+            --shadow-float: 0 20px 50px rgba(0,0,0,0.3);
+            --border-white: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body, html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #000;
+        }
+
+        /* Desktop Layer */
+        #wallpaper {
+            position: fixed;
+            inset: 0;
+            background: url('https://images.unsplash.com/photo-1477346611705-65d1883cee1e?q=80&w=2070') center/cover;
+            z-index: 1;
+            transition: filter 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s;
+        }
+
+        /* Lock Screen */
+        #lock-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 20000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(0,0,0,0.2);
+            backdrop-filter: blur(50px);
+        }
+
+        #lock-screen.unlocked {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(1.1);
+        }
+
+        .lock-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 1s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Navigation Bar */
+        #top-bar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(25px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 12px;
+            color: white;
+            font-size: 13px;
+            border-bottom: 0.5px solid rgba(255,255,255,0.15);
+        }
+
+        .menu-item {
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: default;
+            transition: background 0.2s;
+        }
+
+        .menu-item:hover { background: rgba(255,255,255,0.15); }
+
+        /* Dropdowns */
+        .dropdown-pane {
+            position: absolute;
+            top: 35px;
+            background: var(--glass);
+            backdrop-filter: var(--blur);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            border: 0.5px solid rgba(255,255,255,0.4);
+            min-width: 240px;
+            padding: 6px;
+            display: none;
+            z-index: 10000;
+            color: #1d1d1f;
+        }
+
+        .drop-item {
+            padding: 6px 12px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .drop-item:hover { background: var(--accent); color: white; }
+        .drop-sep { height: 1px; background: rgba(0,0,0,0.08); margin: 6px 10px; }
+
+        /* Window Management */
+        .window {
+            position: absolute;
+            background: var(--glass);
+            backdrop-filter: var(--blur);
+            border-radius: 14px;
+            box-shadow: var(--shadow-float);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 0.5px solid rgba(255,255,255,0.4);
+            z-index: 100;
+            animation: win-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes win-pop {
+            from { opacity: 0; transform: scale(0.95) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .window.dark-win {
+            background: var(--glass-dark);
+            color: #eee;
+            border: 0.5px solid rgba(255,255,255,0.1);
+        }
+
+        .window.focused { z-index: 500; box-shadow: 0 30px 70px rgba(0,0,0,0.45); }
+        .window.minimized { display: none; }
+
+        .titlebar {
+            height: 42px;
+            background: rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            cursor: default;
+        }
+
+        .traffic-light { width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; display: flex; align-items: center; justify-content: center; font-size: 8px; }
+        .close { background: #FF5F57; }
+        .min { background: #FEBC2E; }
+        .max { background: #28C840; }
+
+        /* App Contents */
+        .terminal-body { background: #000; color: #00FF41; font-family: 'Fira Code', monospace; font-size: 13px; padding: 10px; flex: 1; overflow-y: auto; }
+        
+        .monitor-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .monitor-table th { text-align: left; padding: 8px; background: rgba(0,0,0,0.05); border-bottom: 1px solid rgba(0,0,0,0.1); }
+        .monitor-table td { padding: 8px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+
+        .code-editor { flex: 1; display: flex; background: #1e1e1e; color: #d4d4d4; font-family: 'Fira Code', monospace; }
+        .gutter { width: 45px; background: #1e1e1e; border-right: 1px solid #333; color: #858585; text-align: right; padding-right: 10px; padding-top: 10px; font-size: 12px; }
+        #code-input { flex: 1; background: transparent; border: none; outline: none; color: #d4d4d4; padding: 10px; resize: none; font-family: inherit; font-size: 14px; -webkit-user-select: text; user-select: text; }
+
+        /* Dock */
+        #dock-wrapper { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 10000; padding: 8px; background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(35px); border-radius: 24px; border: var(--border-white); display: flex; align-items: flex-end; gap: 12px; height: 64px; transition: transform 0.5s; }
+        .dock-app { width: 48px; height: 48px; border-radius: 12px; background: white; display: flex; align-items: center; justify-content: center; font-size: 28px; transition: all 0.2s cubic-bezier(0.2, 0, 0, 1); position: relative; cursor: pointer; }
+        .dock-app:hover { transform: scale(1.4) translateY(-12px); margin: 0 12px; }
+        .dock-app.active::after { content: ''; position: absolute; bottom: -8px; width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,0.8); }
+
+        /* Control Panel */
+        .control-panel { width: 320px; padding: 16px; }
+        .slider-row { margin: 15px 0; background: rgba(0,0,0,0.05); padding: 12px; border-radius: 12px; }
+        input[type="range"] { width: 100%; accent-color: var(--accent); }
+    </style>
+</head>
+<body class="light">
+
+    <div id="wallpaper"></div>
+
+    <!-- Lock Screen -->
+    <div id="lock-screen">
+        <div class="lock-content">
+            <div class="w-24 h-24 rounded-full bg-white/20 backdrop-blur-md mb-6 flex items-center justify-center text-4xl overflow-hidden">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Tahoe" alt="User">
+            </div>
+            <h1 class="text-2xl font-semibold mb-8">Flavortown user</h1>
+            <div class="relative group">
+                <input type="password" id="lock-pass" placeholder="Enter Password" class="bg-white/20 border border-white/30 rounded-full px-6 py-2 outline-none focus:bg-white/30 transition-all text-center placeholder:text-white/50" onkeydown="if(event.key==='Enter') unlock()">
+                <div class="mt-4 text-[10px] text-white/40 uppercase tracking-widest text-center cursor-pointer" onclick="unlock()">Press Enter to Login</div>
+            </div>
+        </div>
+        <div class="absolute bottom-12 flex gap-12 text-sm opacity-80">
+            <div class="flex flex-col items-center gap-2 cursor-pointer" onclick="location.reload()"><i class="fas fa-undo"></i> Restart</div>
+            <div class="flex flex-col items-center gap-2 cursor-pointer"><i class="fas fa-power-off"></i> Shut Down</div>
+        </div>
+    </div>
+
+    <!-- Top Bar -->
+    <nav id="top-bar">
+        <div class="flex items-center gap-1">
+            <div class="menu-item font-bold" onclick="toggleDrop(event, 'apple-menu')"></div>
+            <div class="menu-item font-bold" id="active-app-indicator">Finder</div>
+            <div class="menu-item">File</div>
+            <div class="menu-item">Edit</div>
+            <div class="menu-item">View</div>
+            <div class="menu-item">Go</div>
+            <div class="menu-item">Window</div>
+            <div class="menu-item">Help</div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1 opacity-90"><i class="fas fa-wifi"></i></div>
+            <div class="flex items-center gap-1 opacity-90 cursor-pointer" onclick="toggleDrop(event, 'battery-info')">
+                <span id="bat-percent">100%</span>
+                <i id="bat-icon" class="fas fa-battery-full"></i>
+            </div>
+            <div class="menu-item" onclick="toggleDrop(event, 'control-center')"><i class="fas fa-sliders-h"></i></div>
+            <div id="clock" class="font-medium mr-1">Mon Jan 01 12:00</div>
+        </div>
+    </nav>
+
+    <!-- Dropdowns -->
+    <div id="apple-menu" class="dropdown-pane">
+        <div class="drop-item">About This Mac</div>
+        <div class="drop-sep"></div>
+        <div class="drop-item" onclick="launchApp('settings')">System Settings...</div>
+        <div class="drop-sep"></div>
+        <div class="drop-item" onclick="lock()">Lock Screen <span class="opacity-40 text-[10px]">^⌘L</span></div>
+        <div class="drop-item" onclick="window.location.reload()">Log Out...</div>
+    </div>
+
+    <div id="battery-info" class="dropdown-pane right-16">
+        <div class="px-4 py-2">
+            <div class="text-[11px] font-bold text-gray-500 uppercase">Battery</div>
+            <div class="flex justify-between items-center mt-1">
+                <span class="text-xl font-bold" id="bat-detail">100%</span>
+                <span id="bat-status" class="text-xs text-gray-500">Power Source: Battery</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="control-center" class="dropdown-pane right-4 control-panel">
+        <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="bg-blue-500 p-3 rounded-2xl text-white flex flex-col gap-1">
+                <i class="fas fa-wifi"></i>
+                <span class="text-[11px] font-bold">Wi-Fi</span>
+                <span class="text-[10px] opacity-80">Flavortown_guest</span>
+            </div>
+            <div class="bg-zinc-200/50 p-3 rounded-2xl flex flex-col gap-1">
+                <i class="fab fa-bluetooth-b text-blue-600"></i>
+                <span class="text-[11px] font-bold">Bluetooth</span>
+                <span class="text-[10px] opacity-50">On</span>
+            </div>
+        </div>
+        <div class="slider-row">
+            <div class="flex justify-between text-[11px] mb-2 font-bold"><span>Display</span> <i class="fas fa-sun"></i></div>
+            <input type="range" min="20" max="100" value="100" oninput="document.getElementById('wallpaper').style.filter = `brightness(${this.value/100})`">
+        </div>
+    </div>
+
+    <!-- Desktop -->
+    <main id="desktop" class="absolute inset-0 pt-10 z-10"></main>
+
+    <!-- Dock -->
+    <div id="dock-wrapper">
+        <div class="dock-app" title="Finder" onclick="launchApp('finder')">📂</div>
+        <div class="dock-app" title="Safari" onclick="launchApp('safari')">🧭</div>
+        <div class="dock-app" title="Terminal" onclick="launchApp('terminal')">💻</div>
+        <div class="dock-app" title="Code" onclick="launchApp('editor')">📝</div>
+        <div class="dock-app" title="Activity Monitor" onclick="launchApp('monitor')">📊</div>
+        <div class="dock-app" title="Settings" onclick="launchApp('settings')">⚙️</div>
+    </div>
+
+    <script>
+        const CONFIG = { version: "26.0.0", user: "flavortown_guest", host: "Flavortowns_Mac_Ultra" };
+        const STATE = { processes: {}, focusedPid: null, zCounter: 1000, isLocked: true };
+
+        window.onload = () => {
+            initClock();
+            initBattery();
+            initEventListeners();
+            document.getElementById('lock-pass').focus();
+        };
+
+        function lock() {
+            STATE.isLocked = true;
+            const ls = document.getElementById('lock-screen');
+            ls.classList.remove('unlocked');
+            document.getElementById('wallpaper').style.filter = "blur(50px) brightness(0.7)";
+            setTimeout(() => document.getElementById('lock-pass').focus(), 500);
+        }
+
+        function unlock() {
+            STATE.isLocked = false;
+            document.getElementById('lock-screen').classList.add('unlocked');
+            document.getElementById('wallpaper').style.filter = "none";
+            document.getElementById('lock-pass').value = "";
+        }
+
+        async function initBattery() {
+            try {
+                const battery = await navigator.getBattery();
+                const update = () => {
+                    const lvl = Math.round(battery.level * 100);
+                    document.getElementById('bat-percent').innerText = `${lvl}%`;
+                    document.getElementById('bat-detail').innerText = `${lvl}%`;
+                    document.getElementById('bat-icon').className = battery.charging ? "fas fa-bolt text-yellow-500" : (lvl > 20 ? "fas fa-battery-full text-green-500" : "fas fa-battery-quarter text-red-500");
+                };
+                battery.addEventListener('levelchange', update);
+                battery.addEventListener('chargingchange', update);
+                update();
+            } catch (e) { console.log("Battery API restricted."); }
+        }
+
+        function initClock() {
+            const update = () => {
+                const now = new Date();
+                document.getElementById('clock').innerText = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + " " + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+            };
+            setInterval(update, 1000);
+            update();
+        }
+
+        const APP_MANIFEST = {
+            finder: { title: 'Finder', icon: '📂', width: 700, height: 450, theme: 'light' },
+            safari: { title: 'Safari', icon: '🧭', width: 900, height: 600, theme: 'light' },
+            terminal: { title: 'Terminal', icon: '💻', width: 650, height: 400, theme: 'dark' },
+            editor: { title: 'Code', icon: '📝', width: 1000, height: 700, theme: 'dark' },
+            monitor: { title: 'Activity Monitor', icon: '📊', width: 600, height: 500, theme: 'light' },
+            settings: { title: 'Settings', icon: '⚙️', width: 800, height: 550, theme: 'light' }
+        };
+
+        function launchApp(id) {
+            if (STATE.isLocked) return;
+            if (STATE.processes[id]) return focusWindow(id);
+
+            const manifest = APP_MANIFEST[id];
+            const win = document.createElement('div');
+            win.id = `win-${id}`;
+            win.className = `window ${manifest.theme === 'dark' ? 'dark-win' : ''}`;
+            win.style.cssText = `width:${manifest.width}px; height:${manifest.height}px; left:${100 + (Object.keys(STATE.processes).length * 40)}px; top:${80 + (Object.keys(STATE.processes).length * 30)}px;`;
+
+            win.innerHTML = `
+                <div class="titlebar" onmousedown="startDrag(event, '${id}')">
+                    <div class="flex gap-2">
+                        <div class="traffic-light close" onclick="closeApp('${id}')"></div>
+                        <div class="traffic-light min" onclick="minimizeApp('${id}')"></div>
+                        <div class="traffic-light max" onclick="maximizeApp('${id}')"></div>
+                    </div>
+                    <div class="flex-1 text-center text-xs font-semibold opacity-70">${manifest.title}</div>
+                </div>
+                <div class="flex-1 relative flex flex-col overflow-hidden" id="app-body-${id}">
+                    ${generateAppContent(id)}
+                </div>
+            `;
+
+            document.getElementById('desktop').appendChild(win);
+            STATE.processes[id] = { ...manifest, isMax: false };
+            if (id === 'terminal') setupTerminalLogic(id);
+            if (id === 'editor') setupEditorLogic(id);
+            if (id === 'monitor') setupMonitorLogic(id);
+            focusWindow(id);
+            updateDock();
+        }
+
+        function generateAppContent(id) {
+            if (id === 'monitor') return `
+                <div class="flex flex-col h-full bg-white text-black">
+                    <div class="p-2 bg-gray-100 flex gap-4 text-[11px] border-bottom">
+                        <div class="font-bold border-b-2 border-blue-500 pb-1">CPU</div>
+                        <div class="text-gray-500">Memory</div>
+                        <div class="text-gray-500">Energy</div>
+                        <div class="text-gray-500">Disk</div>
+                        <div class="text-gray-500 ml-auto">Search...</div>
+                    </div>
+                    <table class="monitor-table">
+                        <thead><tr><th>Process Name</th><th>% CPU</th><th>Threads</th><th>Idle Wake ups</th><th>Memory</th></tr></thead>
+                        <tbody id="monitor-list"></tbody>
+                    </table>
+                </div>`;
+            if (id === 'terminal') return `<div class="terminal-body flex flex-col" id="term-view"><div id="term-output"></div><div class="flex gap-2"><span class="text-blue-400 font-bold">${CONFIG.user}@${CONFIG.host} %</span><input id="term-input" class="bg-transparent border-none outline-none flex-1 text-white" autofocus></div></div>`;
+            if (id === 'editor') return `<div class="code-editor"><div class="gutter" id="line-numbers">1</div><textarea id="code-input" spellcheck="false">/* Hoang's Tahoe */\n\nconsole.log("MACOS Tahoe Replica - Flavortown Project");</textarea></div>`;
+            if (id === 'finder') return `<div class="flex h-full bg-white text-black"><div class="w-40 border-r p-4 text-[13px] bg-gray-50 flex flex-col gap-2"><div class="font-bold text-gray-400 text-[10px] uppercase">Favorites</div><div class="bg-gray-200/60 p-1.5 rounded-md">🏠 Home</div><div class="p-1.5">📄 Documents</div></div><div class="flex-1 p-6 grid grid-cols-4 content-start gap-8"><div class="flex flex-col items-center gap-1">📂 Projects</div><div class="flex flex-col items-center gap-1">📄 index.js</div></div></div>`;
+            if (id === 'settings') return `<div class="flex h-full bg-white text-black"><div class="w-48 bg-gray-100/50 border-r p-3"><div class="bg-blue-500 text-white p-2 rounded-lg text-sm mb-1">General</div><div class="p-2 text-sm">Appearance</div></div><div class="flex-1 p-10"><h1 class="text-2xl font-bold mb-4">Mac Studio</h1><p class="text-sm opacity-60">M5 Ultra, 2027</p><div class="mt-8 bg-gray-50 p-4 rounded-xl border">Memory: 128GB Unified Memory<br>Processor: Apple M5 Ultra<br>Serial Number: ABCDE12367<br> MacOS: Tahoe${CONFIG.version}</div></div></div>`;
+            return `<div class="p-10">Safari</div>`;
+        }
+
+        function setupMonitorLogic(id) {
+            const list = document.getElementById('monitor-list');
+            const refresh = () => {
+                const procs = Object.keys(STATE.processes).map(p => ({
+                    name: APP_MANIFEST[p].title,
+                    cpu: (Math.random() * 5).toFixed(1),
+                    mem: (Math.random() * 200 + 50).toFixed(0) + ' MB'
+                }));
+                procs.push({ name: 'WindowServer', cpu: '2.4', mem: '412 MB' }, { name: 'Kernel Task', cpu: '1.1', mem: '1.2 GB' });
+                list.innerHTML = procs.map(p => `<tr><td>${p.name}</td><td>${p.cpu}</td><td>4</td><td>0</td><td>${p.mem}</td></tr>`).join('');
+            };
+            setInterval(refresh, 2000);
+            refresh();
+        }
+
+        function setupTerminalLogic(id) {
+            const input = document.getElementById('term-input');
+            const output = document.getElementById('term-output');
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') {
+                    const cmd = input.value.trim();
+                    output.innerHTML += `<div><span class="text-blue-400 font-bold">%</span> ${cmd}</div>`;
+                    if (cmd === 'ls') output.innerHTML += `<div class="text-zinc-400">Applications/  Desktop/  System/</div>`;
+                    else if (cmd === 'top') launchApp('monitor');
+                    input.value = "";
+                }
+            });
+        }
+
+        function setupEditorLogic(id) {
+            const edit = document.getElementById('code-input');
+            const gut = document.getElementById('line-numbers');
+            edit.addEventListener('input', () => {
+                const count = edit.value.split('\n').length;
+                gut.innerHTML = Array.from({length: count}, (_, i) => i + 1).join('<br>');
+            });
+        }
+
+        /* Standard Controls */
+        let dragging = null, dragOffset = { x: 0, y: 0 };
+        function startDrag(e, id) { dragging = id; const win = document.getElementById(`win-${id}`); dragOffset = { x: e.clientX - win.offsetLeft, y: e.clientY - win.offsetTop }; focusWindow(id); }
+        document.addEventListener('mousemove', e => { if (dragging) { const win = document.getElementById(`win-${dragging}`); win.style.left = e.clientX - dragOffset.x + 'px'; win.style.top = e.clientY - dragOffset.y + 'px'; }});
+        document.addEventListener('mouseup', () => dragging = null);
+        function focusWindow(id) { document.querySelectorAll('.window').forEach(w => w.classList.remove('focused')); document.getElementById(`win-${id}`).style.zIndex = ++STATE.zCounter; document.getElementById(`win-${id}`).classList.add('focused'); document.getElementById('active-app-indicator').innerText = APP_MANIFEST[id].title; }
+        function closeApp(id) { document.getElementById(`win-${id}`).remove(); delete STATE.processes[id]; updateDock(); }
+        function updateDock() { document.querySelectorAll('.dock-app').forEach(a => { const id = a.getAttribute('title').toLowerCase().split(' ')[0]; a.classList.toggle('active', !!STATE.processes[id === 'activity' ? 'monitor' : id]); }); }
+        function toggleDrop(e, id) { e.stopPropagation(); const el = document.getElementById(id); const open = el.style.display === 'block'; document.querySelectorAll('.dropdown-pane').forEach(d => d.style.display = 'none'); if (!open) el.style.display = 'block'; }
+        function initEventListeners() { document.addEventListener('click', () => document.querySelectorAll('.dropdown-pane').forEach(d => d.style.display = 'none')); }
+    </script>
+</body>
+</html>

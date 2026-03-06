@@ -164,29 +164,114 @@
             cursor: default;
         }
 
-        .traffic-light { width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; display: flex; align-items: center; justify-content: center; font-size: 8px; }
+        .traffic-light {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px; 
+        }
         .close { background: #FF5F57; }
         .min { background: #FEBC2E; }
         .max { background: #28C840; }
 
-        /* App Contents */
-        .terminal-body { background: #000; color: #00FF41; font-family: 'Fira Code', monospace; font-size: 13px; padding: 10px; flex: 1; overflow-y: auto; }
+        .terminal-body { background: #000;
+            color: #00FF41; 
+            font-family: 'Fira Code', monospace; 
+            font-size: 13px; padding: 10px; 
+            flex: 1; 
+            overflow-y: auto; 
+        }
         
-        .monitor-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .monitor-table th { text-align: left; padding: 8px; background: rgba(0,0,0,0.05); border-bottom: 1px solid rgba(0,0,0,0.1); }
-        .monitor-table td { padding: 8px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .monitor-table { width: 100%; 
+            border-collapse: collapse; 
+            font-size: 12px; 
+        }
+        .monitor-table th { text-align: left;
+            padding: 8px;
+            background: rgba(0,0,0,0.05); 
+            border-bottom: 1px solid rgba(0,0,0,0.1); 
+        }
+        .monitor-table td { 
+            padding: 8px; 
+            border-bottom: 1px solid rgba(0,0,0,0.05); 
+        }
 
-        .code-editor { flex: 1; display: flex; background: #1e1e1e; color: #d4d4d4; font-family: 'Fira Code', monospace; }
-        .gutter { width: 45px; background: #1e1e1e; border-right: 1px solid #333; color: #858585; text-align: right; padding-right: 10px; padding-top: 10px; font-size: 12px; }
-        #code-input { flex: 1; background: transparent; border: none; outline: none; color: #d4d4d4; padding: 10px; resize: none; font-family: inherit; font-size: 14px; -webkit-user-select: text; user-select: text; }
+        .code-editor { 
+            flex: 1; 
+            display: flex; 
+            background: #1e1e1e; 
+            color: #d4d4d4; 
+            font-family: 'Fira Code', monospace; 
+        }
+        .gutter {
+            width: 45px; 
+            background: #1e1e1e; 
+            border-right: 1px solid #333; 
+            color: #858585; 
+            text-align: right; 
+            padding-right: 10px; 
+            padding-top: 10px; 
+            font-size: 12px; 
+        }
+        #code-input {
+            flex: 1; 
+            background: transparent; 
+            border: none; 
+            outline: none; 
+            color: #d4d4d4; 
+            padding: 10px; 
+            resize: none; 
+            font-family: inherit; 
+            font-size: 14px; 
+            -webkit-user-select: text;
+            user-select: text; 
+        }
 
-        /* Dock */
-        #dock-wrapper { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 10000; padding: 8px; background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(35px); border-radius: 24px; border: var(--border-white); display: flex; align-items: flex-end; gap: 12px; height: 64px; transition: transform 0.5s; }
-        .dock-app { width: 48px; height: 48px; border-radius: 12px; background: white; display: flex; align-items: center; justify-content: center; font-size: 28px; transition: all 0.2s cubic-bezier(0.2, 0, 0, 1); position: relative; cursor: pointer; }
+        #dock-wrapper { 
+            position: fixed; 
+            bottom: 12px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            z-index: 10000; 
+            padding: 8px; 
+            background: rgba(255, 255, 255, 0.25); 
+            backdrop-filter: blur(35px); 
+            border-radius: 24px; 
+            border: var(--border-white); 
+            display: flex; 
+            align-items: flex-end; 
+            gap: 12px;
+            height: 64px; 
+            transition: transform 0.5s; 
+        }
+        .dock-app { 
+            width: 48px;
+            height: 48px; 
+            border-radius: 12px; 
+            background: white; 
+            display: flex;
+            align-items: center; 
+            justify-content: center; 
+            font-size: 28px; 
+            transition: all 0.2s cubic-bezier(0.2, 0, 0, 1); 
+            position: relative; 
+            cursor: pointer; 
+        }
         .dock-app:hover { transform: scale(1.4) translateY(-12px); margin: 0 12px; }
-        .dock-app.active::after { content: ''; position: absolute; bottom: -8px; width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,0.8); }
+        .dock-app.active::after { 
+            content: ''; 
+            position: absolute; 
+            bottom: -8px; 
+            width: 4px; 
+            height: 4px; 
+            border-radius: 50%; 
+            background: rgba(255,255,255,0.8); 
+        }
 
-        /* Control Panel */
         .control-panel { width: 320px; padding: 16px; }
         .slider-row { margin: 15px 0; background: rgba(0,0,0,0.05); padding: 12px; border-radius: 12px; }
         input[type="range"] { width: 100%; accent-color: var(--accent); }
@@ -444,14 +529,40 @@
 
         /* Standard Controls */
         let dragging = null, dragOffset = { x: 0, y: 0 };
-        function startDrag(e, id) { dragging = id; const win = document.getElementById(`win-${id}`); dragOffset = { x: e.clientX - win.offsetLeft, y: e.clientY - win.offsetTop }; focusWindow(id); }
-        document.addEventListener('mousemove', e => { if (dragging) { const win = document.getElementById(`win-${dragging}`); win.style.left = e.clientX - dragOffset.x + 'px'; win.style.top = e.clientY - dragOffset.y + 'px'; }});
+        function startDrag(e, id) {
+            dragging = id;
+            const win = document.getElementById(`win-${id}`);
+            dragOffset = { x: e.clientX - win.offsetLeft, y: e.clientY - win.offsetTop }; focusWindow(id); 
+        }
+        document.addEventListener('mousemove', e => { if (dragging) {
+            const win = document.getElementById(`win-${dragging}`);
+            win.style.left = e.clientX - dragOffset.x + 'px';
+            win.style.top = e.clientY - dragOffset.y + 'px';
+        }});
         document.addEventListener('mouseup', () => dragging = null);
-        function focusWindow(id) { document.querySelectorAll('.window').forEach(w => w.classList.remove('focused')); document.getElementById(`win-${id}`).style.zIndex = ++STATE.zCounter; document.getElementById(`win-${id}`).classList.add('focused'); document.getElementById('active-app-indicator').innerText = APP_MANIFEST[id].title; }
-        function closeApp(id) { document.getElementById(`win-${id}`).remove(); delete STATE.processes[id]; updateDock(); }
-        function updateDock() { document.querySelectorAll('.dock-app').forEach(a => { const id = a.getAttribute('title').toLowerCase().split(' ')[0]; a.classList.toggle('active', !!STATE.processes[id === 'activity' ? 'monitor' : id]); }); }
-        function toggleDrop(e, id) { e.stopPropagation(); const el = document.getElementById(id); const open = el.style.display === 'block'; document.querySelectorAll('.dropdown-pane').forEach(d => d.style.display = 'none'); if (!open) el.style.display = 'block'; }
-        function initEventListeners() { document.addEventListener('click', () => document.querySelectorAll('.dropdown-pane').forEach(d => d.style.display = 'none')); }
+        function focusWindow(id) {
+            document.querySelectorAll('.window').forEach(w => w.classList.remove('focused'));
+            document.getElementById(`win-${id}`).style.zIndex = ++STATE.zCounter;
+            document.getElementById(`win-${id}`).classList.add('focused');
+            document.getElementById('active-app-indicator').innerText = APP_MANIFEST[id].title; 
+        }
+        function closeApp(id) {
+            document.getElementById(`win-${id}`).remove(); 
+            delete STATE.processes[id]; updateDock(); 
+        }
+        function updateDock() { document.querySelectorAll('.dock-app').forEach(a => {
+            const id = a.getAttribute('title').toLowerCase().split(' ')[0];
+            a.classList.toggle('active', !!STATE.processes[id === 'activity' ? 'monitor' : id]); 
+        }); }
+        function toggleDrop(e, id) {
+            e.stopPropagation(); const el = document.getElementById(id);
+            const open = el.style.display === 'block'; 
+            document.querySelectorAll('.dropdown-pane').forEach(d => d.style.display = 'none'); 
+            if (!open) el.style.display = 'block'; 
+        }
+        function initEventListeners() {
+            document.addEventListener('click', () => document.querySelectorAll('.dropdown-pane').forEach(d => d.style.display = 'none')); 
+        }
     </script>
 </body>
 </html>
